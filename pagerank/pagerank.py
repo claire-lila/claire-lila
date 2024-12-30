@@ -57,7 +57,22 @@ def transition_model(corpus, page, damping_factor):
     linked to by `page`. With probability `1 - damping_factor`, choose
     a link at random chosen from all pages in the corpus.
     """
-    raise NotImplementedError
+    probs = {}
+
+    for key in corpus:
+        probs[key] = 0
+
+    n = len(corpus)
+
+    if corpus(page):
+        links = corpus[page]
+    else:
+        links = corpus.keys()
+
+    for p in probs:
+        probs[p] = (1-damping_factor)/n
+        if p in links:
+            probs[p] = damping_factor/len(links)
 
 
 def sample_pagerank(corpus, damping_factor, n):
@@ -69,7 +84,28 @@ def sample_pagerank(corpus, damping_factor, n):
     their estimated PageRank value (a value between 0 and 1). All
     PageRank values should sum to 1.
     """
-    raise NotImplementedError
+    pagerank = {}
+
+    for page in corpus:
+        pagerank[page] = 0
+
+    page = random.choice(list(corpus.keys()))
+
+    for i in range(n):
+        pagerank[page] += 1
+
+        model = transition_model(corpus, page, damping_factor)
+
+        pages = list(model.keys())
+
+        probabilities = list(model.values())
+
+        page = random.choices(pages, probabilities)[0]
+
+    normalized_pagerank = {}
+
+
+
 
 
 def iterate_pagerank(corpus, damping_factor):
@@ -81,7 +117,39 @@ def iterate_pagerank(corpus, damping_factor):
     their estimated PageRank value (a value between 0 and 1). All
     PageRank values should sum to 1.
     """
-    raise NotImplementedError
+    n = len(corpus)
+
+    pagerank = {}
+
+    for page in corpus:
+        pagerank[page] = 1/n
+
+    threshold = 0.001
+    new_pagerank = pagerank.copy()
+
+    while True:
+        for page in corpus:
+            total = (1 - damping_factor)/n
+            for p in corpus:
+                if page in corpus[p]:
+                    total += damping_factor * (pagerank[p])/ len(corpus[p])
+                if not corpus[p]:
+                    total += damping_factor * (pagerank[p]/n)
+            new_pagerank = total
+
+        converged = True
+        for p in pagerank:
+            difference = abs(new_pagerank[p] - pagerank[p])
+            if difference >=  threshold:
+                converged = False
+                break
+        if converged == True:
+            break
+        else:
+            pagerank = new_pagerank.copy()
+
+    return new_pagerank
+
 
 
 if __name__ == "__main__":
