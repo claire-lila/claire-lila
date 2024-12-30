@@ -1,3 +1,5 @@
+import readline
+
 import cv2
 import numpy as np
 import os
@@ -58,7 +60,21 @@ def load_data(data_dir):
     be a list of integer labels, representing the categories for each of the
     corresponding `images`.
     """
-    raise NotImplementedError
+    images = []
+    labels = []
+
+    for category in range(0, NUM_CATEGORIES-1):
+        category_directory = os.path.join(data_dir, str(category))
+
+        if os.path.isdir(category_directory):
+            for filename in os.listdir(category_directory):
+                image_path = os.path.join(category_directory, filename)
+                image = cv2.imread(image_path)
+                image = cv2.resize(image, (IMG_WIDTH, IMG_HEIGHT))
+                images.append(image)
+                labels.append(category)
+
+    return images, labels
 
 
 def get_model():
@@ -67,7 +83,40 @@ def get_model():
     `input_shape` of the first layer is `(IMG_WIDTH, IMG_HEIGHT, 3)`.
     The output layer should have `NUM_CATEGORIES` units, one for each category.
     """
-    raise NotImplementedError
+
+    model = tf.keras.layers.Sequential()
+
+
+
+    # convolutional layers Learn 40 filters using a 3x3 kernel
+    model(tf.keras.layers.Conv2D(
+        40, (3, 3), activation="relu", input_shape=(IMG_WIDTH, IMG_HEIGHT, 3)
+    ))
+
+    # Convolutional layers with Learn 50 filters using a 4x4 kernel
+    #model(tf.keras.layers.Conv2D(
+    #    43, (4, 4), activation="relu", input_shape=(IMG_WIDTH, IMG_HEIGHT, 3)
+    #))
+
+    # convolutional layers Learn 100 filters using a 3x3 kernel
+    #model(tf.keras.layers.Conv2D(
+    #    43, (3, 3), activation="relu", input_shape=(IMG_WIDTH, IMG_HEIGHT, 3)
+    #))
+
+    #Max pooling with 2x2 kernels
+    model.add(tf.keras.layers.MaxPooling2D(pool_size=(2,2)))
+
+    #flatten units
+    tf.keras.layers.Flatten()
+
+    # 10 hidden layers with ReLU activation
+    model.add(tf.keras.layers.Dense(10, activation="relu"))
+
+    #Dropout with 0.5?
+    model.add(tf.keras.layers.Dropout(0.5))
+
+    #Output of NUM_CATEGORIES w activation ReLU?
+    model.add(tf.keras.layers.Dense(NUM_CATEGORIES, activation="softmax"))
 
 
 if __name__ == "__main__":
