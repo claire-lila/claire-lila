@@ -127,6 +127,65 @@ def powerset(s):
         )
     ]
 
+def check_how_many_copies(person, one_gene, two_genes):
+    if person in one_gene:
+        return 1
+    elif person in two_genes:
+        return 2
+    else:
+        return 0
+
+def probs_no_parents(copies_gene, has_trait):
+    return PROBS["gene"][copies_gene] * PROBS["trait"][copies_gene][has_trait]
+
+def probs_has_parents(person, people, one_gene, two_genes, have_trait):
+    mother = people[person]["mother"]
+    mother_genes = check_how_many_copies(mother, one_gene, two_genes)
+
+    father = people[person]["father"]
+    father_genes = check_how_many_copies(father, one_gene, two_genes)
+
+    prob_mother_pass_gene = mother_genes / 2
+    prob_father_pass_gene = father_genes / 2
+
+    p_father_pass_gene_and_dont_mutate = prob_father_pass_gene * (1 - PROBS["mutation"])
+    p_father_pass_gene_and_do_mutate = prob_father_pass_gene * PROBS["mutation"]
+    p_father_dont_pass_gene_and_dont_mutate = (1 - prob_father_pass_gene) * (1 - PROBS["mutation"])
+    p_father_dont_pass_gene_and_do_mutate = (1 - prob_father_pass_gene) * PROBS["mutation"]
+
+    p_mother_pass_gene_and_dont_mutate = prob_mother_pass_gene * (1 - PROBS["mutation"])
+    p_mother_pass_gene_and_do_mutate = prob_mother_pass_gene * PROBS["mutation"]
+    p_mother_dont_pass_gene_and_dont_mutate = (1 - prob_mother_pass_gene) * (1 - PROBS["mutation"])
+    p_mother_dont_pass_gene_and_do_mutate = (1 - prob_mother_pass_gene) * PROBS["mutation"]
+
+    child_genes = check_how_many_copies(person, one_gene, two_genes)
+
+    if child_genes == 0:
+        probability = (p_father_pass_gene_and_do_mutate * p_mother_dont_pass_gene_and_dont_mutate)
+        + (p_father_dont_pass_gene_and_do_mutate * p_mother_pass_gene_and_do_mutate)
+        + (p_father_dont_pass_gene_and_dont_mutate * p_mother_dont_pass_gene_and_dont_mutate)
+        + (p_father_dont_pass_gene_and_dont_mutate * p_mother_pass_gene_and_do_mutate)
+
+    elif child_genes == 1:
+        probability = (p_father_pass_gene_and_dont_mutate * p_mother_dont_pass_gene_and_dont_mutate)
+        + (p_father_pass_gene_and_dont_mutate * p_mother_pass_gene_and_do_mutate)
+        + (p_father_pass_gene_and_do_mutate * p_mother_dont_pass_gene_and_do_mutate)
+        + (p_father_pass_gene_and_do_mutate * p_mother_dont_pass_gene_and_dont_mutate)
+        + (p_father_dont_pass_gene_and_do_mutate * p_mother_dont_pass_gene_and_dont_mutate)
+        + (p_father_dont_pass_gene_and_do_mutate * p_mother_pass_gene_and_do_mutate)
+        + (p_father_dont_pass_gene_and_dont_mutate * p_mother_pass_gene_and_dont_mutate)
+        + (p_father_dont_pass_gene_and_dont_mutate * p_mother_dont_pass_gene_and_do_mutate)
+
+
+    elif child_genes == 2:
+        probability = (p_father_pass_gene_and_dont_mutate * p_mother_pass_gene_and_dont_mutate)
+        + (p_father_dont_pass_gene_and_do_mutate * p_mother_dont_pass_gene_and_do_mutate)
+        + (p_father_dont_pass_gene_and_do_mutate * p_mother_dont_pass_gene_and_dont_mutate)
+        + (p_father_pass_gene_and_dont_mutate * p_mother_dont_pass_gene_and_do_mutate)
+
+    return probability
+
+
 
 def joint_probability(people, one_gene, two_genes, have_trait):
     """
@@ -139,6 +198,24 @@ def joint_probability(people, one_gene, two_genes, have_trait):
         * everyone in set `have_trait` has the trait, and
         * everyone not in set` have_trait` does not have the trait.
     """
+    probability = 1
+
+    for person in people:
+        copies_gene = check_how_many_copies(person, one_gene, two_genes)
+
+        if person in have_trait:
+            has_trait = True
+        else:
+            has_trait = False
+
+        if people[person]["mother"] == None:
+            probability += probs_no_parents(copies_gene, has_trait)
+        else:
+            probability += (probs_has_parents(person, people, one_gene, two_genes, have_trait) * PROBS["trait"][copies_gene][has_trait])
+
+
+    return probability
+
     raise NotImplementedError
 
 
@@ -149,7 +226,19 @@ def update(probabilities, one_gene, two_genes, have_trait, p):
     Which value for each distribution is updated depends on whether
     the person is in `have_gene` and `have_trait`, respectively.
     """
-    raise NotImplementedError
+    for person in probabilities:
+        copies_gene = check_how_many_copies(person, one_gene, two_genes)
+
+        if person in have_trait:
+            has_trait = True
+        else:
+            has_trait = False
+
+            probabilities[person]["gene"][copies_gene] += p
+            probabilities[person]["trait"][copies_gene] += p
+
+
+
 
 
 def normalize(probabilities):
@@ -157,7 +246,20 @@ def normalize(probabilities):
     Update `probabilities` such that each probability distribution
     is normalized (i.e., sums to 1, with relative proportions the same).
     """
-    raise NotImplementedError
+    for person in probabilities:
+        total_p_genes = sum(probabilities[person]["gene"].values())
+        total_p_trait = sum(probabilities[person]["trait"].values())
+
+        for gene in probabilities[person]["gene"]:
+            original_value = probabilities[person]["gene"][gene]
+            new_value = original_value / total_p_genes
+            probabilities[person]["gene"][gene] = new_value
+
+        for trait in probabilities[person]["trait"]:
+            original_value = probabilities[person]["trait"][trait]
+            new_value = original_value / total_p_trait
+            probabilities[person]["trait"][trait] = new_value
+
 
 
 if __name__ == "__main__":
