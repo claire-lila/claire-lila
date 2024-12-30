@@ -59,15 +59,47 @@ def load_data(filename):
     labels should be the corresponding list of labels, where each label
     is 1 if Revenue is true, and 0 otherwise.
     """
-    raise NotImplementedError
+    labels = []
+    evidence = []
+    months = ["Jan", "Feb", "Mar", "Apr", "May", "June", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
+    with open('shopping.csv') as f:
+        reader = csv.reader(f)
+        next(reader)
+        for row in reader:
+            if row[-1] == "TRUE":
+                labels.append(1)
+            else:
+                labels.append(0)
+        evidence.append([
+            int(row[0]),
+            float(row[1]),
+            int(row[2]),
+            float(row[3]),
+            int(row[4]),
+            float(row[5]),
+            float(row[6]),
+            float(row[7]),
+            float(row[8]),
+            float(row[9]),
+            months.index(row[10]),
+            int(row[11]),
+            int(row[12]),
+            int(row[13]),
+            int(row[14]),
+            1 if row[15] == "Returning_Visitor" else 0,
+            1 if row[16] == "TRUE" else 0
+        ])
+    return evidence, labels
 
 def train_model(evidence, labels):
     """
     Given a list of evidence lists and a list of labels, return a
     fitted k-nearest neighbor model (k=1) trained on the data.
     """
-    raise NotImplementedError
+    k = KNeighborsClassifier(n_neighbors = 1)
+    k.fit(evidence, labels)
+    return k
 
 
 def evaluate(labels, predictions):
@@ -85,7 +117,25 @@ def evaluate(labels, predictions):
     representing the "true negative rate": the proportion of
     actual negative labels that were accurately identified.
     """
-    raise NotImplementedError
+    true_positives = 0
+    actual_positives = 0
+    true_negatives = 0
+    actual_negatives = 0
+
+    for index in range(len(labels)):
+        if labels[index] == 1:
+            actual_positives += 1
+            if predictions[index] == 1:
+                true_positives += 1
+            else:
+                actual_negatives += 1
+                if predictions[index] == 0:
+                    true_negatives += 1
+
+    sensitivity = true_positives / actual_positives
+    specificity = true_negatives / actual_negatives
+
+    return sensitivity, specificity
 
 
 if __name__ == "__main__":
