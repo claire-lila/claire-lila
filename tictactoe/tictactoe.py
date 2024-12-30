@@ -172,3 +172,7 @@ def minimax(board):
 
 
 
+
+
+
+
